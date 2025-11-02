@@ -40,7 +40,8 @@ class TestVarasto(unittest.TestCase):
         self.assertAlmostEqual(self.varasto.paljonko_mahtuu(), 4)
 
     def test_konstruktori_negatiivinen_tilavuus(self):
-        self.assertAlmostEqual(Varasto(-10).tilavuus, 0)
+        with self.assertRaisesRegex(Exception, "virheellinen tilavuus"):
+            Varasto(-10)
 
     def test_konstruktori_negatiivinen_saldo(self):
         self.assertAlmostEqual(Varasto(10, alku_saldo=-7).saldo, 0)
