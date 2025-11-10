@@ -8,8 +8,6 @@ def main():
         "olutta": Varasto(100.0, 20.2)
     }
 
-    # super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line super long line 
-
     print("Luonnin jälkeen:")
     print(f"Mehuvarasto: {variables['mehua']}")
     print(f"Olutvarasto: {variables['olutta']}")
