@@ -1,57 +1,84 @@
-from varasto import Varasto
+from varasto import Varasto, InvalidTilavuus
 
 
 def main():
-    mehua = Varasto(100.0)
-    olutta = Varasto(100.0, 20.2)
+    # :p
+    variables = {
+        "mehua": Varasto(100.0),
+        "olutta": Varasto(100.0, 20.2)
+    }
 
     print("Luonnin jälkeen:")
-    print(f"Mehuvarasto: {mehua}")
-    print(f"Olutvarasto: {olutta}")
+    print(f"Mehuvarasto: {variables['mehua']}")
+    print(f"Olutvarasto: {variables['olutta']}")
 
     print("Olut getterit:")
-    print(f"saldo = {olutta.saldo}")
-    print(f"tilavuus = {olutta.tilavuus}")
-    print(f"paljonko_mahtuu = {olutta.paljonko_mahtuu()}")
+    print(f"saldo = {variables['olutta'].saldo}")
+    print(f"tilavuus = {variables['olutta'].tilavuus}")
+    print(f"paljonko_mahtuu = {variables['olutta'].paljonko_mahtuu()}")
 
+    main1(variables)
+
+def main1(variables):
     print("Mehu setterit:")
     print("Lisätään 50.7")
-    mehua.lisaa_varastoon(50.7)
-    print(f"Mehuvarasto: {mehua}")
+    variables['mehua'].lisaa_varastoon(50.7)
+    print(f"Mehuvarasto: {variables['mehua']}")
     print("Otetaan 3.14")
-    mehua.ota_varastosta(3.14)
-    print(f"Mehuvarasto: {mehua}")
+    variables['mehua'].ota_varastosta(3.14)
+    print(f"Mehuvarasto: {variables['mehua']}")
 
+    main2(variables)
+
+def main2(variables):
     print("Virhetilanteita:")
     print("Varasto(-100.0);")
-    huono = Varasto(-100.0)
-    print(huono)
 
+    try:
+        variables["huono"] = Varasto(-100.0)
+    except InvalidTilavuus:
+        pass
+
+    main3(variables)
+
+def main3(variables):
     print("Varasto(100.0, -50.7)")
-    huono = Varasto(100.0, -50.7)
-    print(huono)
 
-    print(f"Olutvarasto: {olutta}")
+    try:
+        variables["huono"] = Varasto(100.0, -50.7)
+    except InvalidTilavuus:
+        pass
+
+    main4(variables)
+
+def main4(variables):
+    print(f"Olutvarasto: {variables['olutta']}")
     print("olutta.lisaa_varastoon(1000.0)")
-    olutta.lisaa_varastoon(1000.0)
-    print(f"Olutvarasto: {olutta}")
+    variables['olutta'].lisaa_varastoon(1000.0)
+    print(f"Olutvarasto: {variables['olutta']}")
 
-    print(f"Mehuvarasto: {mehua}")
+    print(f"Mehuvarasto: {variables['mehua']}")
     print("mehua.lisaa_varastoon(-666.0)")
-    mehua.lisaa_varastoon(-666.0)
-    print(f"Mehuvarasto: {mehua}")
+    variables['mehua'].lisaa_varastoon(-666.0)
+    print(f"Mehuvarasto: {variables['mehua']}")
 
-    print(f"Olutvarasto: {olutta}")
+    main5(variables)
+
+def main5(variables):
+    print(f"Olutvarasto: {variables['olutta']}")
     print("olutta.ota_varastosta(1000.0)")
-    saatiin = olutta.ota_varastosta(1000.0)
-    print(f"saatiin {saatiin}")
-    print(f"Olutvarasto: {olutta}")
+    variables['saatiin'] = variables['olutta'].ota_varastosta(1000.0)
+    print(f"saatiin {variables['saatiin']}")
+    print(f"Olutvarasto: {variables['olutta']}")
 
-    print(f"Mehuvarasto: {mehua}")
+    main6(variables)
+
+def main6(variables):
+    print(f"Mehuvarasto: {variables['mehua']}")
     print("mehua.otaVarastosta(-32.9)")
-    saatiin = mehua.ota_varastosta(-32.9)
-    print(f"saatiin {saatiin}")
-    print(f"Mehuvarasto: {mehua}")
+    variables['saatiin'] = variables['mehua'].ota_varastosta(-32.9)
+    print(f"saatiin {variables['saatiin']}")
+    print(f"Mehuvarasto: {variables['mehua']}")
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 import unittest
-from varasto import Varasto
+from varasto import Varasto, InvalidTilavuus
 
 
 class TestVarasto(unittest.TestCase):
@@ -40,7 +40,7 @@ class TestVarasto(unittest.TestCase):
         self.assertAlmostEqual(self.varasto.paljonko_mahtuu(), 4)
 
     def test_konstruktori_negatiivinen_tilavuus(self):
-        with self.assertRaisesRegex(Exception, "virheellinen tilavuus"):
+        with self.assertRaises(InvalidTilavuus):
             Varasto(-10)
 
     def test_konstruktori_taysi_varasto(self):
