@@ -1,17 +1,56 @@
 import os
+import logging
 from flask import Flask, render_template, request, redirect, url_for, flash
 from varasto import Varasto, InvalidTilavuus
 
-app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+logging.basicConfig(level=logging.ERROR)
+logger = logging.getLogger(__name__)
 
-# In-memory storage for varastos
-varastos = {}
+app = Flask(__name__)
+app.secret_key = os.environ.get(
+    'SECRET_KEY', 'dev-secret-key-change-in-production'
+)
+
+
+class VarastoManager:
+    """Manages a collection of Varasto instances"""
+
+    def __init__(self):
+        self._varastos = {}
+
+    def get_all(self):
+        """Return all varastos"""
+        return self._varastos
+
+    def get(self, name):
+        """Get a varasto by name"""
+        return self._varastos.get(name)
+
+    def exists(self, name):
+        """Check if a varasto exists"""
+        return name in self._varastos
+
+    def create(self, name, tilavuus):
+        """Create a new varasto"""
+        if name in self._varastos:
+            raise ValueError(f"Varasto '{name}' already exists")
+        varasto = Varasto(tilavuus)
+        self._varastos[name] = varasto
+        return varasto
+
+    def delete(self, name):
+        """Delete a varasto"""
+        if name not in self._varastos:
+            raise KeyError(f"Varasto '{name}' not found")
+        del self._varastos[name]
+
+
+varasto_manager = VarastoManager()
 
 @app.route('/')
 def index():
     """Display all varastos"""
-    return render_template('index.html', varastos=varastos)
+    return render_template('index.html', varastos=varasto_manager.get_all())
 
 @app.route('/create', methods=['POST'])
 def create_varasto():
@@ -24,18 +63,17 @@ def create_varasto():
             flash('Varaston nimi on pakollinen', 'error')
             return redirect(url_for('index'))
 
-        if name in varastos:
-            flash(f'Varasto nimellä "{name}" on jo olemassa', 'error')
-            return redirect(url_for('index'))
-
-        varasto = Varasto(tilavuus)
-        varastos[name] = varasto
+        varasto_manager.create(name, tilavuus)
         flash(f'Varasto "{name}" luotu onnistuneesti', 'success')
     except InvalidTilavuus:
         flash('Tilavuuden täytyy olla positiivinen luku', 'error')
-    except ValueError:
-        flash('Virheellinen tilavuus. Anna positiivinen numero.', 'error')
-    except Exception:  # pylint: disable=broad-exception-caught
+    except ValueError as e:
+        if "already exists" in str(e):
+            flash(f'Varasto nimellä "{name}" on jo olemassa', 'error')
+        else:
+            flash('Virheellinen tilavuus. Anna positiivinen numero.', 'error')
+    except Exception as e:
+        logger.error("Unexpected error in create_varasto: %s", e, exc_info=True)
         flash('Virhe luotaessa varastoa', 'error')
 
     return redirect(url_for('index'))
@@ -44,7 +82,8 @@ def create_varasto():
 def add_to_varasto(name):
     """Add amount to a varasto"""
     try:
-        if name not in varastos:
+        varasto = varasto_manager.get(name)
+        if not varasto:
             flash(f'Varastoa "{name}" ei löydy', 'error')
             return redirect(url_for('index'))
 
@@ -54,11 +93,12 @@ def add_to_varasto(name):
             flash('Määrän täytyy olla positiivinen luku', 'error')
             return redirect(url_for('index'))
 
-        varastos[name].lisaa_varastoon(maara)
+        varasto.lisaa_varastoon(maara)
         flash(f'Lisätty {maara} varastoon "{name}"', 'success')
     except ValueError:
         flash('Virheellinen määrä. Anna positiivinen numero.', 'error')
-    except Exception:  # pylint: disable=broad-exception-caught
+    except Exception as e:
+        logger.error("Unexpected error in add_to_varasto: %s", e, exc_info=True)
         flash('Virhe lisättäessä varastoon', 'error')
 
     return redirect(url_for('index'))
@@ -67,7 +107,8 @@ def add_to_varasto(name):
 def take_from_varasto(name):
     """Take amount from a varasto"""
     try:
-        if name not in varastos:
+        varasto = varasto_manager.get(name)
+        if not varasto:
             flash(f'Varastoa "{name}" ei löydy', 'error')
             return redirect(url_for('index'))
 
@@ -77,11 +118,14 @@ def take_from_varasto(name):
             flash('Määrän täytyy olla positiivinen luku', 'error')
             return redirect(url_for('index'))
 
-        saatu = varastos[name].ota_varastosta(maara)
+        saatu = varasto.ota_varastosta(maara)
         flash(f'Otettu {saatu} varastosta "{name}"', 'success')
     except ValueError:
         flash('Virheellinen määrä. Anna positiivinen numero.', 'error')
-    except Exception:  # pylint: disable=broad-exception-caught
+    except Exception as e:
+        logger.error(
+            "Unexpected error in take_from_varasto: %s", e, exc_info=True
+        )
         flash('Virhe otettaessa varastosta', 'error')
 
     return redirect(url_for('index'))
@@ -90,12 +134,12 @@ def take_from_varasto(name):
 def delete_varasto(name):
     """Delete a varasto"""
     try:
-        if name not in varastos:
-            flash(f'Varastoa "{name}" ei löydy', 'error')
-        else:
-            del varastos[name]
-            flash(f'Varasto "{name}" poistettu', 'success')
-    except Exception:  # pylint: disable=broad-exception-caught
+        varasto_manager.delete(name)
+        flash(f'Varasto "{name}" poistettu', 'success')
+    except KeyError:
+        flash(f'Varastoa "{name}" ei löydy', 'error')
+    except Exception as e:
+        logger.error("Unexpected error in delete_varasto: %s", e, exc_info=True)
         flash('Virhe poistettaessa varastoa', 'error')
 
     return redirect(url_for('index'))
