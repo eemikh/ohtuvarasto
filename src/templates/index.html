@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Etusivu{% endblock %}
+
+{% block content %}
+<div class="form-section">
+    <h2>➕ Luo uusi varasto</h2>
+    <form method="POST" action="{{ url_for('create_varasto') }}">
+        <div class="form-group">
+            <label for="name">Varaston nimi:</label>
+            <input type="text" id="name" name="name" required placeholder="Esim. Mehuvarasto">
+        </div>
+        <div class="form-group">
+            <label for="tilavuus">Tilavuus:</label>
+            <input type="number" id="tilavuus" name="tilavuus" step="0.01" min="0.01" required placeholder="Esim. 100.0">
+        </div>
+        <button type="submit">Luo varasto</button>
+    </form>
+</div>
+
+{% if varastos %}
+<h2 style="margin-bottom: 20px; color: #495057;">📦 Varastot ({{ varastos|length }})</h2>
+<div class="varastos-grid">
+    {% for name, varasto in varastos.items() %}
+    <div class="varasto-card">
+        <h3>{{ name }}</h3>
+        <div class="varasto-info">
+            <p>
+                <strong>Saldo:</strong>
+                <span>{{ "%.2f"|format(varasto.saldo) }}</span>
+            </p>
+            <p>
+                <strong>Tilavuus:</strong>
+                <span>{{ "%.2f"|format(varasto.tilavuus) }}</span>
+            </p>
+            <p>
+                <strong>Vapaana:</strong>
+                <span>{{ "%.2f"|format(varasto.paljonko_mahtuu()) }}</span>
+            </p>
+            
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: {{ (varasto.saldo / varasto.tilavuus * 100)|round }}%"></div>
+            </div>
+            <p style="text-align: center; font-size: 12px; color: #6c757d;">
+                {{ "%.1f"|format(varasto.saldo / varasto.tilavuus * 100) }}% täynnä
+            </p>
+        </div>
+        
+        <div class="varasto-actions">
+            <form method="POST" action="{{ url_for('add_to_varasto', name=name) }}" style="flex: 1;">
+                <div class="action-row">
+                    <input type="number" name="maara" step="0.01" min="0.01" placeholder="Määrä" required>
+                    <button type="submit" class="action">Lisää</button>
+                </div>
+            </form>
+            
+            <form method="POST" action="{{ url_for('take_from_varasto', name=name) }}" style="flex: 1;">
+                <div class="action-row">
+                    <input type="number" name="maara" step="0.01" min="0.01" placeholder="Määrä" required>
+                    <button type="submit" class="action">Ota</button>
+                </div>
+            </form>
+        </div>
+        
+        <form method="POST" action="{{ url_for('delete_varasto', name=name) }}" style="margin-top: 15px;">
+            <button type="submit" class="delete" style="width: 100%;" onclick="return confirm('Haluatko varmasti poistaa varaston {{ name }}?')">Poista varasto</button>
+        </form>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <p>📭 Ei vielä varastoja</p>
+    <p style="font-size: 0.9em;">Luo ensimmäinen varastosi yllä olevalla lomakkeella</p>
+</div>
+{% endif %}
+{% endblock %}
