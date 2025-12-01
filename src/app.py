@@ -1,10 +1,6 @@
 import os
-import logging
 from flask import Flask, render_template, request, redirect, url_for, flash
 from varasto import Varasto, InvalidTilavuus
-
-logging.basicConfig(level=logging.ERROR)
-logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get(
@@ -55,14 +51,19 @@ def index():
 @app.route('/create', methods=['POST'])
 def create_varasto():
     """Create a new varasto"""
+    name = request.form.get('name', '').strip()
+
+    if not name:
+        flash('Varaston nimi on pakollinen', 'error')
+        return redirect(url_for('index'))
+
     try:
-        name = request.form.get('name', '').strip()
         tilavuus = float(request.form.get('tilavuus', 0))
+    except ValueError:
+        flash('Virheellinen tilavuus. Anna positiivinen numero.', 'error')
+        return redirect(url_for('index'))
 
-        if not name:
-            flash('Varaston nimi on pakollinen', 'error')
-            return redirect(url_for('index'))
-
+    try:
         varasto_manager.create(name, tilavuus)
         flash(f'Varasto "{name}" luotu onnistuneesti', 'success')
     except InvalidTilavuus:
@@ -71,62 +72,53 @@ def create_varasto():
         if "already exists" in str(e):
             flash(f'Varasto nimellä "{name}" on jo olemassa', 'error')
         else:
-            flash('Virheellinen tilavuus. Anna positiivinen numero.', 'error')
-    except Exception as e:
-        logger.error("Unexpected error in create_varasto: %s", e, exc_info=True)
-        flash('Virhe luotaessa varastoa', 'error')
+            raise
 
     return redirect(url_for('index'))
 
 @app.route('/add/<name>', methods=['POST'])
 def add_to_varasto(name):
     """Add amount to a varasto"""
+    varasto = varasto_manager.get(name)
+    if not varasto:
+        flash(f'Varastoa "{name}" ei löydy', 'error')
+        return redirect(url_for('index'))
+
     try:
-        varasto = varasto_manager.get(name)
-        if not varasto:
-            flash(f'Varastoa "{name}" ei löydy', 'error')
-            return redirect(url_for('index'))
-
         maara = float(request.form.get('maara', 0))
-
-        if maara <= 0:
-            flash('Määrän täytyy olla positiivinen luku', 'error')
-            return redirect(url_for('index'))
-
-        varasto.lisaa_varastoon(maara)
-        flash(f'Lisätty {maara} varastoon "{name}"', 'success')
     except ValueError:
         flash('Virheellinen määrä. Anna positiivinen numero.', 'error')
-    except Exception as e:
-        logger.error("Unexpected error in add_to_varasto: %s", e, exc_info=True)
-        flash('Virhe lisättäessä varastoon', 'error')
+        return redirect(url_for('index'))
+
+    if maara <= 0:
+        flash('Määrän täytyy olla positiivinen luku', 'error')
+        return redirect(url_for('index'))
+
+    varasto.lisaa_varastoon(maara)
+    flash(f'Lisätty {maara} varastoon "{name}"', 'success')
 
     return redirect(url_for('index'))
 
 @app.route('/take/<name>', methods=['POST'])
 def take_from_varasto(name):
     """Take amount from a varasto"""
+    varasto = varasto_manager.get(name)
+    if not varasto:
+        flash(f'Varastoa "{name}" ei löydy', 'error')
+        return redirect(url_for('index'))
+
     try:
-        varasto = varasto_manager.get(name)
-        if not varasto:
-            flash(f'Varastoa "{name}" ei löydy', 'error')
-            return redirect(url_for('index'))
-
         maara = float(request.form.get('maara', 0))
-
-        if maara <= 0:
-            flash('Määrän täytyy olla positiivinen luku', 'error')
-            return redirect(url_for('index'))
-
-        saatu = varasto.ota_varastosta(maara)
-        flash(f'Otettu {saatu} varastosta "{name}"', 'success')
     except ValueError:
         flash('Virheellinen määrä. Anna positiivinen numero.', 'error')
-    except Exception as e:
-        logger.error(
-            "Unexpected error in take_from_varasto: %s", e, exc_info=True
-        )
-        flash('Virhe otettaessa varastosta', 'error')
+        return redirect(url_for('index'))
+
+    if maara <= 0:
+        flash('Määrän täytyy olla positiivinen luku', 'error')
+        return redirect(url_for('index'))
+
+    saatu = varasto.ota_varastosta(maara)
+    flash(f'Otettu {saatu} varastosta "{name}"', 'success')
 
     return redirect(url_for('index'))
 
@@ -138,9 +130,6 @@ def delete_varasto(name):
         flash(f'Varasto "{name}" poistettu', 'success')
     except KeyError:
         flash(f'Varastoa "{name}" ei löydy', 'error')
-    except Exception as e:
-        logger.error("Unexpected error in delete_varasto: %s", e, exc_info=True)
-        flash('Virhe poistettaessa varastoa', 'error')
 
     return redirect(url_for('index'))
 
