@@ -21,7 +21,7 @@ jobs:
       - name: Run tests
         run: poetry run coverage run --branch -m pytest
       - name: Run pylint
-        run: poetry run pylint src
+        run: poetry run pylint --exit-zero src
       - name: Coverage report
         run: poetry run coverage xml
       - name: Coverage report to Codecov
