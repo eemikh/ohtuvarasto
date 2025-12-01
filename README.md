@@ -20,7 +20,11 @@ A Flask-based web interface for managing multiple varastos (warehouses).
 
 1. Install dependencies:
 ```bash
-pip install flask
+# Using Poetry (recommended)
+poetry install
+
+# Or using pip
+pip install -e .
 ```
 
 2. Run the application:
@@ -42,5 +46,9 @@ FLASK_DEBUG=true python3 app.py
 
 Run the test suite:
 ```bash
+# Using Poetry
+poetry run pytest src/tests/
+
+# Or directly with pytest
 python3 -m pytest src/tests/
 ```
